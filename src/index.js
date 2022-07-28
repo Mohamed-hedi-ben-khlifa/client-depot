@@ -4,19 +4,19 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter } from 'react-router-dom';
-
+import { SocketContext, socket } from './context/socket'
 import { Provider } from 'react-redux'
-
 import store from './store/store';
 
 ReactDOM.render(
   <React.StrictMode>
-    <Provider store={store}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </Provider>
-
+    <SocketContext.Provider value={socket}>
+      <Provider store={store}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </Provider>
+    </SocketContext.Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );

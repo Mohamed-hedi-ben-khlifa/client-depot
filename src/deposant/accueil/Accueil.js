@@ -2,52 +2,60 @@ import React, {  useEffect, useState } from 'react'
 
 import { liste_des_article_de_deposant,nombre_total_article_deposant,liste_des_article_non_verser} from '../../store/articleSlice'
 import { useDispatch } from 'react-redux'
+import { rechercher_user_par_token } from '../../store/userSlice'
 
 
-export default function Accueil (){
+export default function Accueil (props){
 
-  
+
   
     const dispatch = useDispatch()
 
 
     const [articles, setArticles] = useState([])
     const [nombre_articles, setNombre_articles] = useState([])
-    const [articles_vendu, setArticles_vendu] = useState([])
+    const [articles_vendu, setArticles_vendu] = useState(0)
     const [montant_a_recevoir, setMontant_a_recevoir] = useState(0)
     const [total_montant, setTotal_montant] = useState(0)
-
-    const [deposant] = useState(JSON.parse( localStorage.getItem('user')))
-
-
+    const [user, setUser] = useState()
+  const token = localStorage.getItem("token")
 
     useEffect(() => {
-        dispatch(liste_des_article_de_deposant(deposant._id)).then((action)=>{
+        if (token !== null)
+          dispatch(rechercher_user_par_token()).then(action => {
+            setUser(action.payload.user)
+          })
+      }, [])
+
+    useEffect(() => {
+       
+        dispatch(liste_des_article_de_deposant(user?._id)).then((action)=>{
             setArticles(action.payload.article)
         })
       }, [])
 
       useEffect(() => {
-        dispatch(nombre_total_article_deposant(deposant._id)).then((action)=>{
+        dispatch(nombre_total_article_deposant(user?._id)).then((action)=>{
             setNombre_articles(action.payload.article.length)
         })
       }, [])
 
       useEffect(() => {
-        dispatch(nombre_total_article_deposant(deposant._id)).then((action)=>{
+        dispatch(nombre_total_article_deposant(user?._id)).then((action)=>{
             setTotal_montant(action.payload.article.map(article => article.montant_reverser).reduce((prev, next) => prev + next))
         })
       }, [])
 
       useEffect(() => {
-        dispatch(liste_des_article_non_verser(deposant._id)).then((action)=>{
+        dispatch(liste_des_article_non_verser(user?._id)).then((action)=>{
             setArticles_vendu(action.payload.article.length)
         })
       }, [])
 
       useEffect(() => {
-        dispatch(liste_des_article_non_verser(deposant._id)).then((action)=>{
-            setMontant_a_recevoir(action.payload.article.map(article => article.montant_reverser).reduce((prev, next) => prev + next))        
+        dispatch(liste_des_article_non_verser(user?._id)).then((action)=>{
+            const x = action.payload.article
+            setMontant_a_recevoir(x.map(article => article.montant_reverser).reduce((prev, next) => prev + next))        
         })
         
       }, [])
@@ -84,7 +92,7 @@ export default function Accueil (){
                                     </div>
                                     <div className="text-end pt-1">
                                         <p className="text-sm mb-0 text-capitalize">Articles Vendu</p>
-                                        <h4 className="mb-0">{articles_vendu}</h4>
+                                        <h4 className="mb-0">{articles_vendu || 0}</h4>
                                     </div>
                                 </div>
                                 <hr className="dark horizontal my-0" />

@@ -1,44 +1,46 @@
 import React, { useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { auth } from '../store/userSlice'
 import { useNavigate } from 'react-router-dom'
 
-
-const Connexion = (props) => {
-
-  const { auth_user } = useSelector((state) => state.user)
-  let navigate = useNavigate();
+const Connexion = () => {
 
 
-  const dispatch = useDispatch()
-  const [valid, setvalid] = useState(true)
-  const [user, setUser] = useState({
-    email: "",
-    pasword: "",
-  })
-
-  const handleChange = e => {
-    setvalid(true)
-    const { name, value } = e.target;
-    setUser(prevState => ({
-      ...prevState,
-      [name]: value
-    }))
-  }
-
-  const connexion = () => {
-    dispatch(auth(user)).then(action => {
-      localStorage.setItem("user", JSON.stringify(action.payload.user))
-
-      if (action.payload.user.role === 'deposant') {
-        navigate('/deposant/articles', { replace: true })
-        props.setUser(action.payload.user)
-      }
-      else {
-        navigate("", { replace: true })
-      }
+    const dispatch = useDispatch()
+    const [valid, setvalid] = useState(true)
+    const [message, setMessage] = useState()
+    const [user, setUser] = useState({
+        email: "",
+        pasword: "",
     })
-  }
+
+    const handleChange = e => {
+        setvalid(true)
+        const { name, value } = e.target;
+        setUser(prevState => ({
+            ...prevState,
+            [name]: value
+        }))
+    }
+
+    const connexion = () => {
+
+        dispatch(auth(user)).then(action => {
+          console.log(action)
+            if (action.payload.success && action.payload.user.role === "deposant") {
+                console.log(action)
+                localStorage.setItem("token", action.payload.token)
+                const myTimeout = setTimeout(window.location.reload(), 2000);
+              
+                
+                
+            }else{
+                setvalid(false)
+                setMessage(action.payload.message)
+
+            }
+        })
+    }
 
 
   return (
@@ -62,7 +64,7 @@ const Connexion = (props) => {
                   <div className="input-group input-group-dynamic my-3 mb-3">
                     <input type="password" className="form-control input-group-dynamic " placeholder="Password" aria-label="Password" name="pasword" value={user.pasword} onChange={handleChange} />
                   </div>
-                  {!valid ? <p className='text-primary text_start'> Adresse email ou mot de passe inncorrect !! </p> : <p></p>}
+                  {!valid ? <p className='text-primary text-start text-xs'> {message} </p> : <p></p>}
                   <div className="text-center">
                     <button type="button" className="btn btn-lg bg-gradient-primary btn-lg w-100 mt-4 mb-0" onClick={() => connexion()}>S'identifier</button>
                   </div>

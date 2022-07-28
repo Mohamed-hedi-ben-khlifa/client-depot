@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { useSelector } from 'react-redux'
-
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { rechercher_user_par_token } from '../../../store/userSlice'
 
 
 export default function Liste_des_reçus_verser(props) {
@@ -9,7 +9,17 @@ export default function Liste_des_reçus_verser(props) {
     const [etat, setEtat] = useState(0)
     const [reçu, setReçu] = useState([])
     const {boutique}= useSelector( (state) => state.boutique)
-
+    const [user, setUser] = useState()
+    const dispatch = useDispatch()
+    const token = localStorage.getItem("token")
+  
+      useEffect(() => {
+          if (token !== null)
+            dispatch(rechercher_user_par_token()).then(action => {
+              setUser(action.payload.user)
+            })
+        }, [])
+  
 
 
     const afficher = () => {
@@ -182,12 +192,12 @@ export default function Liste_des_reçus_verser(props) {
                         <div className="row w-100 " style={{ marginLeft: '5%' }}>
                             <div className="col-9">
                                 <span><h6 className="text-start " style={{ fontWeight: '700' }}> Deposant :</h6></span>
-                                <span><p style={{ marginTop: '-9.5%', marginLeft: '6%' }}>{props.deposant.prenom} {props.deposant.nom}</p></span>
+                                <span><p style={{ marginTop: '-9.5%', marginLeft: '6%' }}>{user?.prenom} {user?.nom}</p></span>
                             </div>
 
                             <div className="col-3">
                                 <span><h6 className="text-start " style={{ fontWeight: '700', marginLeft: '-30%' }}>Réf: </h6></span>
-                                <span><p style={{ marginTop: '-33%', marginLeft: '-36%' }}>{props.deposant.ref}</p></span>
+                                <span><p style={{ marginTop: '-33%', marginLeft: '-36%' }}>{user?.ref}</p></span>
                             </div>
 
                         </div>

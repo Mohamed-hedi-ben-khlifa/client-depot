@@ -1,53 +1,58 @@
 import './App.css';
 import Connexion from './connexion/Connexion'
-import { Routes, Route } from 'react-router-dom'
-import { useDispatch } from 'react-redux'
-import { useEffect, useState } from 'react';
+import Articles from './deposant/article/Articles'
+import Profile from './deposant/profile/Profile'
+import Notifications from './deposant/notification/Notifications'
+import Reçus from './deposant/reçu/Reçus'
 
-import Deposant from './route/Deposant';
-import { information } from './store/boutiqueSlice';
-import { SocketContext, socket } from './context/socket'
-import { rechercher_deposant_par_id } from './store/deposantSlice';
-
+import { Private_Routes_Deposants } from './route/Private_Routes_Deposants'
+import { rechercher_user_par_token } from './store/userSlice'
 
 
+import { Route, Routes, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useDispatch } from 'react-redux';
 
 
 function App() {
-  
+
+  let navigate = useNavigate()
   const dispatch = useDispatch()
-  useEffect(() => {dispatch(information())}, [dispatch])
+  const [user, setUser] = useState()
+  const token = localStorage.getItem("token")
 
 
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user')))
-  useEffect(() => {setUser((JSON.parse(localStorage.getItem('user'))))}, [,setUser])
+  useEffect(() => {
+    if (token !== null)
+      dispatch(rechercher_user_par_token()).then(action => {
+        setUser(action.payload.user)
+      })
+  }, [])
 
 
+  useEffect(() => {
 
+    if (user?.role === "deposant" && token !== null) { navigate('/deposant/articles') }
+    if (user === undefined || token === null) { navigate('/connexion') }
 
+  }, [user, token, dispatch])
 
 
   return (
-    <SocketContext.Provider value={socket}>
-      <div className="App">
+    <div className="App">
 
+      <Routes>
+        <Route element={<Private_Routes_Deposants user={user} role={user?.role} />}>
+          <Route path='/deposant/articles' exact element={<Articles user={user} ></Articles>} />
+          <Route path='/deposant/recus' exact element={<Reçus user={user} ></Reçus>} />
+          <Route path='/deposant/profile' exact element={<Profile user={user} ></Profile>} />
+          <Route path='/deposant/notifications' exact element={<Notifications user={user}></Notifications>} />
+        </Route>
 
-        {
-          user && user.role === 'deposant' ?
-            <Deposant setUser={setUser} user={user}>
+        <Route path='/connexion' element={<Connexion />} />
+      </Routes>
 
-            </Deposant>
-
-
-            : <Routes>
-              < Route path="/connexion" exact element={
-                <Connexion setUser={setUser}></Connexion>
-              } />
-            </Routes>
-        }
-
-      </div>
-    </SocketContext.Provider>
+    </div>
   );
 }
 

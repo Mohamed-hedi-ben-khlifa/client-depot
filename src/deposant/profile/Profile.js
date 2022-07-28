@@ -3,7 +3,8 @@ import React, { useContext,useState,useEffect } from 'react'
 import { SocketContext } from '../../context/socket';
 import { useDispatch } from 'react-redux'
 import { liste_des_article_non_verser, nombre_total_article_deposant, nombre_total_article_vendu } from '../../store/articleSlice'
-import { rechercher_deposant_par_id } from '../../store/deposantSlice'
+import { rechercher_deposant_par_id, upload_image_deposant } from '../../store/deposantSlice'
+import { rechercher_user_par_token } from '../../store/userSlice'
 
 
 
@@ -12,17 +13,26 @@ export default function Profile(props) {
 
     const socket = useContext(SocketContext);
     const dispatch = useDispatch()
+    const [user, setUser] = useState()
+    const token = localStorage.getItem("token")
+  
+      useEffect(() => {
+          if (token !== null)
+            dispatch(rechercher_user_par_token()).then(action => {
+              setUser(action.payload.user)
+            })
+        }, [])
 
-    const[ deposant,setDeposant] = useState(props.user)
+    const[ deposant,setDeposant] = useState(user)
     useEffect(() => {
-        dispatch( rechercher_deposant_par_id(props.user._id)).then((action)=> {
+        dispatch( rechercher_deposant_par_id(user?._id)).then((action)=> {
             setDeposant(action.payload.deposant)
         })
     },[])
 
     useEffect(() => {
         socket.on("mettre_a_jour_photo_de_profile",()=> {
-            dispatch( rechercher_deposant_par_id(props.user._id)).then((action)=> {
+            dispatch( rechercher_deposant_par_id(user?._id)).then((action)=> {
                 setDeposant(action.payload.deposant)
             })      })
     }, [socket])
@@ -40,24 +50,24 @@ export default function Profile(props) {
 
 
     useEffect(() => {
-        dispatch(liste_des_article_non_verser(deposant._id)).then((action) => {
+        dispatch(liste_des_article_non_verser(user?._id)).then((action) => {
             setTotal_non_verser(action.payload.article?.map(article => article.montant_reverser).reduce((prev, curr) => prev + curr, 0))
         })
-    }, [dispatch, deposant])
+    }, [dispatch, user])
 
     useEffect(() => {
-        dispatch(nombre_total_article_deposant(deposant._id)).then((action) => setNombre_article_deposer(action.payload.article.length))
+        dispatch(nombre_total_article_deposant(user?._id)).then((action) => setNombre_article_deposer(action.payload.article.length))
     }, [, dispatch])
 
     useEffect(() => {
-        dispatch(nombre_total_article_vendu(deposant._id)).then((action) => {
+        dispatch(nombre_total_article_vendu(user?._id)).then((action) => {
             setNombre_article_vendu(action.payload.article.length)
 
         })
     }, [, dispatch])
 
     useEffect(() => {
-        dispatch(nombre_total_article_deposant(deposant._id)).then((action) => {
+        dispatch(nombre_total_article_deposant(user?._id)).then((action) => {
 
             setTotal(action.payload.article?.map(article => article.montant_reverser).reduce((prev, curr) => prev + curr, 0))
         })
@@ -68,24 +78,20 @@ export default function Profile(props) {
 
     const fileChange = e => {
 
-        const image = new FormData()
+        const image = new FormData() 
         image.append('image', e.target.files[0])
-        const config = {
-            headers: {
-                'content-type': 'multipart/form-data'
-            }
+        const params={
+          id:props.user?._id,
+          image:image
         }
-
-        axios.patch('http://localhost:4040/Deposant/upload/' + deposant._id, image, config).then((data) => {
-            socket.emit("mettre_a_jour_photo_de_profile")
-           
-            setDeposant(prevState => ({
-                ...prevState,
-                image: 'http://localhost:4040/' + data.data.file.filename
-            }))
-        })
         
-    }
+        dispatch(upload_image_deposant(params)).then((action) => {
+          socket.emit("mettre_a_jour_photo_de_profile")
+          dispatch(rechercher_user_par_token()).then(action => {
+            setUser(action.payload.user)
+          })
+        })
+      }
 
 
 
@@ -106,37 +112,37 @@ export default function Profile(props) {
                                             <div className="col-md-5">
                                                 <div className="media">
                                                     <label className="h5 w-40">Nom</label>
-                                                    <p className='h6'>{deposant.nom ? deposant.nom : "Foulaine"}</p>
+                                                    <p className='h6'>{user?.nom ? user?.nom : "Foulaine"}</p>
                                                 </div>
                                                 <div className="media">
                                                     <label className="h5 w-40">Prénom </label>
-                                                    <p className='h6'>{deposant.prenom ? deposant.prenom : "Ben Foulaine"}</p>
+                                                    <p className='h6'>{user?.prenom ? user?.prenom : "Ben Foulaine"}</p>
                                                 </div>
                                                 <div className="media">
                                                     <label className="h5 w-40">Address</label>
-                                                    <p className='h6'>{deposant.adress ? deposant.adress : "Rue ******, ***** "}</p>
+                                                    <p className='h6'>{user?.adress ? user?.adress : "Rue ******, ***** "}</p>
                                                 </div>
                                                 <div className="media">
                                                     <label className="h5 w-40">Code postal</label>
-                                                    <p className='h6'>{deposant.codepostal ? deposant.codepostal : "***"}</p>
+                                                    <p className='h6'>{user?.codepostal ? user?.codepostal : "***"}</p>
                                                 </div>
                                             </div>
                                             <div className="col-5">
                                                 <div className="media">
                                                     <label className="h5 w-40">C.I.N</label>
-                                                    <p className='h6'>{deposant.cin ? deposant.cin : "123*****"}</p>
+                                                    <p className='h6'>{user?.cin ? user?.cin : "123*****"}</p>
                                                 </div>
                                                 <div className="media">
                                                     <label className="h5 w-40">Email</label>
-                                                    <p className='h6'>{deposant.emai ? deposant.email : "exemple@mail.com"}</p>
+                                                    <p className='h6'>{user?.emai ? user?.email : "exemple@mail.com"}</p>
                                                 </div>
                                                 <div className="media">
                                                     <label className="h5 w-40">Telephone</label>
-                                                    <p className='h6'>{deposant.telephone ? deposant.telephone : "+216 ** *** ***"}</p>
+                                                    <p className='h6'>{user?.telephone ? user?.telephone : "+216 ** *** ***"}</p>
                                                 </div>
                                                 <div className="media">
                                                     <label className="h5 w-40">Date N</label>
-                                                    <p className='h6'>{deposant.dateN ? deposant.dateN : "**/**/****"}</p>
+                                                    <p className='h6'>{user?.dateN ? user?.dateN : "**/**/****"}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -146,8 +152,8 @@ export default function Profile(props) {
                                     <div className="about-avatar"  >
                                         <a href="#" data-bs-toggle="modal" data-bs-target="#profile" >
                                             {
-                                                deposant.image ?
-                                                    <img className="w-100 min-height-400 max-height-400 " src={deposant.image} />
+                                                user?.image ?
+                                                    <img className="w-100 min-height-400 max-height-400 " src={process.env.REACT_APP_BASE_URL+"/"+user?.image} />
                                                     :
                                                     <img className="w-100 min-height-400 max-height-400 " src="../../assets/img/s.jpg" />
                                             }

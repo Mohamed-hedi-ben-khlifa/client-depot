@@ -5,7 +5,7 @@ import Barcode from 'react-barcode'
 import { recherche_article_par_id } from '../../store/articleSlice';
 import { vuNotifications, recherche_notification_deposant } from '../../store/notificationSlice'
 import Accueil from '../accueil/Accueil';
-
+import { rechercher_user_par_token } from '../../store/userSlice'
 
 export default function Notifications(props) {
 
@@ -30,6 +30,16 @@ export default function Notifications(props) {
     image: []
   })
 
+  const [user, setUser] = useState()
+  const token = localStorage.getItem("token")
+
+    useEffect(() => {
+        if (token !== null)
+          dispatch(rechercher_user_par_token()).then(action => {
+            setUser(action.payload.user)
+          })
+      }, [])
+
 
 
   const socket = useContext(SocketContext);
@@ -37,19 +47,19 @@ export default function Notifications(props) {
   useEffect(() => {
     socket.on("mettre_a_jour_liste_des_notifications", () => {
 
-      dispatch(recherche_notification_deposant(props.user._id)).then(action => { setNotification(action.payload.notification) })
+      dispatch(recherche_notification_deposant(user?._id)).then(action => { setNotification(action.payload.notification) })
     });
 
   }, [socket])
 
 
   useEffect(() => {
-    dispatch(recherche_notification_deposant(props.user._id)).then(action => {
+    dispatch(recherche_notification_deposant(user?._id)).then(action => {
       setNotification(action.payload.notification)
-      console.log(action);
+
     })
 
-  }, [])
+  }, [user])
 
 
 
@@ -60,10 +70,10 @@ export default function Notifications(props) {
 
     socket.emit("vu_notification")
     dispatch(vuNotifications(notification._id))
-    dispatch(recherche_notification_deposant(props.user._id)).then(action => {
+    dispatch(recherche_notification_deposant(user?._id)).then(action => {
       setNotification(action.payload.notification)
     })
-    dispatch(recherche_notification_deposant(props.user._id)).then(action => {
+    dispatch(recherche_notification_deposant(user?._id)).then(action => {
       setNotification(action.payload.notification)
     })
     dispatch(recherche_article_par_id(notification.article._id)).then(action => {
@@ -141,7 +151,7 @@ export default function Notifications(props) {
                               <a className="dropdown-item border-radius-md" type="button" href="#notification" onClick={() => { vu(notification) }} data-bs-toggle="modal" data-bs-target="#article">
                                 <div className="row">
                                   <div className="col-2 justify-content-center" style={{ maxWidth: '60px' }}>
-                                    <img src="../../../assets/img/team-2.jpg" className="avatar avatar-sm  me-3 " alt="user image" />
+                                    <img src="../../../assets/img/team-2.jpg" className="avatar avatar-sm  me-3 " alt="user? image" />
                                   </div>
                                   <div className="col-9 ">
                                     <h6 className="text-sm font-weight-normal mb-1">

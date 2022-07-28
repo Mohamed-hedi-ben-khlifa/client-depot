@@ -3,7 +3,7 @@ import { SocketContext } from '../../context/socket';
 import { useDispatch } from 'react-redux'
 import { vuNotifications, recherche_notification_deposant, liste_des_notifications_de_deposant_non_vu } from '../../store/notificationSlice'
 import { Link } from 'react-router-dom';
-
+import { rechercher_user_par_token } from '../../store/userSlice'
 
 export default function Notification(props) {
 
@@ -12,6 +12,15 @@ export default function Notification(props) {
     const dispatch = useDispatch()
     const [count, setCount] = useState(0)
     const [notification, setNotification] = useState([])
+    const [user, setUser] = useState()
+    const token = localStorage.getItem("token")
+  
+      useEffect(() => {
+          if (token !== null)
+            dispatch(rechercher_user_par_token()).then(action => {
+              setUser(action.payload.user)
+            })
+        }, [])
 
 
     const socket = useContext(SocketContext);
@@ -19,34 +28,29 @@ export default function Notification(props) {
     useEffect(() => {
         socket.on("mettre_a_jour_liste_des_notifications", () => {
 
-            dispatch(liste_des_notifications_de_deposant_non_vu(props.user._id)).then(action => { setNotification(action.payload.notification) })
-            dispatch(liste_des_notifications_de_deposant_non_vu(props.user._id)).then(action => { setCount(action.payload.notification.length) })
+            dispatch(liste_des_notifications_de_deposant_non_vu(user?._id)).then(action => { setNotification(action.payload.notification) })
+            dispatch(liste_des_notifications_de_deposant_non_vu(user?._id)).then(action => { setCount(action.payload.notification.length) })
         });
-    }, [socket])
+    }, [socket,user])
 
 
     useEffect(() => {
 
 
-        dispatch(liste_des_notifications_de_deposant_non_vu(props.user._id)).then(action => {
+        dispatch(liste_des_notifications_de_deposant_non_vu(user?._id)).then(action => {
             setNotification(action.payload.notification)
-            console.log(action.payload.notification)
+     
         })
 
 
-    }, [])
+    }, [user])
 
     useEffect(() => {
 
-        dispatch(liste_des_notifications_de_deposant_non_vu(props.user._id)).then(action => { setCount(action.payload.notification.length) })
+        dispatch(liste_des_notifications_de_deposant_non_vu(user?._id)).then(action => { setCount(action.payload.notification.length) })
 
     }, [notification])
 
-    useEffect(() => {
-
-        console.log(count);
-
-    }, [count])
 
 
 
@@ -55,12 +59,12 @@ export default function Notification(props) {
 
         dispatch(vuNotifications(notification._id))
         socket.emit("vu_notification")
-        dispatch(recherche_notification_deposant(props.user._id)).then(action => {
+        dispatch(recherche_notification_deposant(user?._id)).then(action => {
             setNotification(action.payload.notification)
 
         })
 
-        dispatch(liste_des_notifications_de_deposant_non_vu(props.user._id)).then(action => {
+        dispatch(liste_des_notifications_de_deposant_non_vu(user?._id)).then(action => {
             setCount(action.payload.notification.length)
         })
 

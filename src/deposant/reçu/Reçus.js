@@ -6,7 +6,7 @@ import Liste_des_reçus_deposer from '../reçu/component/Liste_des_reçus_depose
 
 import { rechercher_reçu_deposant ,liste_des_reçus_payer} from '../../store/reçuSlice'
 import Accueil from '../accueil/Accueil'
-
+import { rechercher_user_par_token } from '../../store/userSlice'
 
 
 
@@ -14,17 +14,28 @@ export default function Reçus() {
 
 
   const dispatch = useDispatch()
-  const [deposant] = useState(JSON.parse( localStorage.getItem('user')))
+ 
   const [reçus_deposer, setReçus_deposer] = useState([])
   const [reçus_payer, setReçus_payer] = useState([])
 
-  useEffect(() => {
-    dispatch(liste_des_reçus_payer(deposant._id)).then((action) => {setReçus_payer(action.payload.reçu) })
-  }, [])
+  const [user, setUser] = useState()
+  const token = localStorage.getItem("token")
+
+    useEffect(() => {
+        if (token !== null)
+          dispatch(rechercher_user_par_token()).then(action => {
+            setUser(action.payload.user)
+          })
+      }, [])
+
 
   useEffect(() => {
-    dispatch(rechercher_reçu_deposant(deposant._id)).then((action) => { setReçus_deposer(action.payload.reçu) })
-  }, [])
+    dispatch(liste_des_reçus_payer(user?._id)).then((action) => {setReçus_payer(action.payload.reçu) })
+  }, [user])
+
+  useEffect(() => {
+    dispatch(rechercher_reçu_deposant(user?._id)).then((action) => { setReçus_deposer(action.payload.reçu) })
+  }, [user])
 
 
   
@@ -34,9 +45,9 @@ export default function Reçus() {
     <div>
       <Accueil></Accueil>
 
-      <Liste_des_reçus_deposer deposant={deposant} reçus_deposer={reçus_deposer}/>
+      <Liste_des_reçus_deposer user={user} reçus_deposer={reçus_deposer}/>
 
-      <Liste_des_reçus_verser deposant={deposant} reçus_payer={reçus_payer}/>
+      <Liste_des_reçus_verser user={user} reçus_payer={reçus_payer}/>
 
 
       

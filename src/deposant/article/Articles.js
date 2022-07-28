@@ -6,18 +6,18 @@ import Postuler_article from './Postuler_article'
 import Barcode from 'react-barcode'
 import axios from 'axios'
 import Accueil from '../accueil/Accueil'
+import { rechercher_user_par_token } from '../../store/userSlice'
+
+export default function Articles(props) {
 
 
-export default function Articles() {
 
-
-  const [deposant] = useState(JSON.parse(localStorage.getItem('user')))
   const dispatch = useDispatch()
   const [message, setMessage] = useState()
-
+  const [user, setUser] = useState()
   const [articles, setArticles] = useState([])
   const [article, setArticle] = useState({
-    user_id: null,
+    user_id: user?._id,
     description: null,
     lib: null,
     etat: null,
@@ -34,24 +34,32 @@ export default function Articles() {
   })
 
 
+  const token = localStorage.getItem("token")
+
+    useEffect(() => {
+        if (token !== null)
+          dispatch(rechercher_user_par_token()).then(action => {
+            setUser(action.payload.user)
+            dispatch(liste_des_article_de_deposant(action.payload.user._id)).then((action) => {
+              setArticles(action.payload.article)
+            })
+          })
+      }, [])
+
+
+ 
 
 
 
-
-  useEffect(() => {
-    dispatch(liste_des_article_de_deposant(deposant._id)).then((action) => {
-      setArticles(action.payload.article)
-    })
-  }, [])
 
   const socket = useContext(SocketContext);
   useEffect(() => {
     socket.on("mettre_a_jour_liste_des_articles_deposant", () => {
-      dispatch(liste_des_article_de_deposant(deposant._id)).then((action) => {
+      dispatch(liste_des_article_de_deposant(user?._id)).then((action) => {
         setArticles(action.payload.article)
       })
     })
-  }, [])
+  }, [socket])
 
   const handleChange = e => {
 
@@ -71,7 +79,7 @@ export default function Articles() {
 
       }
       else {
-        dispatch(liste_des_article_de_deposant(deposant._id)).then(async (action) => { setArticles(action.payload.article) })
+        dispatch(liste_des_article_de_deposant(user?._id)).then(async (action) => { setArticles(action.payload.article) })
         setTimeout(setMessage("Article n'est pas trouver !"), 1000)
         setTimeout(myGreeting, 5000);
 
@@ -84,35 +92,25 @@ export default function Articles() {
 
 
   const fileChange = e => {
-    console.log(e.target.files)
     const photos = new FormData()
     const files = e.target.files
-
-
     for (let i = 0; i < files.length; i++) {
       photos.append("photos", files[i]);
     }
-
-
     const config = {
       headers: {
         'content-type': 'multipart/form-data'
       }
     }
-
-    axios.patch('http://localhost:4040/Article/upload/' + article._id, photos, config).then((data) => {
-      dispatch(liste_des_article_de_deposant(deposant._id)).then((action) => {
-        setArticles(action.payload.article)
-        console.log(action)
-      })
+    axios.patch(process.env.REACT_APP_BASE_URL+'/api/Article/upload/' + article._id, photos, config).then((data) => {
+      dispatch(liste_des_article_de_deposant()).then(action => setArticles(action.payload.article))
+      socket.emit("mettre_a_jour_photo_de_profile")
     })
 
 
   }
   const modal = (article) => {
     setArticle(article);
-
-
   }
 
 
@@ -134,8 +132,8 @@ export default function Articles() {
 
   return (
     <div>
-      <Accueil></Accueil>
-      <Postuler_article setArticles={setArticles} />
+      <Accueil user={user}></Accueil>
+      <Postuler_article  user={user} setArticles={setArticles} />
       <div>
 
 

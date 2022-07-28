@@ -5,16 +5,17 @@ import { addNotifications } from '../../store/notificationSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import { ajouter_article, liste_des_article_de_deposant, supprimer_article } from '../../store/articleSlice'
 import Barcode from 'react-barcode'
+import { rechercher_user_par_token } from '../../store/userSlice'
 
 
 export default function Postuler_article(props) {
 
     const d = new Date()
+    const [user, setUser] = useState()
     const socket = useContext(SocketContext)
-    const [deposant] = useState(JSON.parse(localStorage.getItem('user')))
     const { boutique } = useSelector((state) => state.boutique)
     const [article, setArticle] = useState({
-        user_id: deposant._id,
+        user_id: user?._id,
         lib: "",
         description: "",
         etat: "",
@@ -28,6 +29,16 @@ export default function Postuler_article(props) {
         status_vendu: null,
         image: []
     })
+
+    
+    const token = localStorage.getItem("token")
+  
+      useEffect(() => {
+          if (token !== null)
+            dispatch(rechercher_user_par_token()).then(action => {
+              setUser(action.payload.user)
+            })
+        }, [])
 
     const [etat, setEtat] = useState(0)
 
@@ -57,7 +68,7 @@ export default function Postuler_article(props) {
             socket.emit("deposant_postule_un_article")
             let notification = {
                 article: article,
-                user: deposant,
+                user: user,
                 body: "Postuler",
                 stauts: null
             }
@@ -66,7 +77,7 @@ export default function Postuler_article(props) {
         })
 
         setArticle({
-            user_id: deposant._id,
+            user_id: user?._id,
             lib: "",
             description: "",
             etat: "",
@@ -85,7 +96,7 @@ export default function Postuler_article(props) {
         if (etat === 0) { setEtat(1) } else { setEtat(0) }
 
 
-        dispatch(liste_des_article_de_deposant(deposant._id)).then((action) => {
+        dispatch(liste_des_article_de_deposant(user?._id)).then((action) => {
             props.setArticles(action.payload.article)
         })
 
